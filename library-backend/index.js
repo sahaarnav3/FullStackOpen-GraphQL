@@ -1,5 +1,7 @@
 const { ApolloServer } = require("@apollo/server");
 const { startStandaloneServer } = require("@apollo/server/standalone");
+const { GraphQLError } = require("graphql");
+const { v1: uuid } = require('uuid')
 
 let authors = [
   {
@@ -86,23 +88,34 @@ let books = [
 ];
 
 const typeDefs = /* GraphQL */ `
-  # type Author {
-  #   name: String!
-  #   born: Int!
-  # }
-
   type Book {
     title: String!
     published: Int!
     author: String!
-    genres: [String]
+    genres: [String!]!
     id: ID!
+  }
+
+  type Author {
+    name: String!
+    born: Int
+    bookCount: Int!
   }
 
   type Query {
     bookCount: Int!
     authorCount: Int!
-    allBooks: [Book!]
+    allBooks(author: String, genre: String): [Book!]!
+    allAuthors: [Author!]!
+  }
+
+  type Mutation {
+    addBook(
+      title: String!
+      author: String!
+      published: Int!
+      genres: [String!]!
+    ): Book
   }
 `;
 
@@ -110,8 +123,38 @@ const resolvers = {
   Query: {
     bookCount: () => books.length,
     authorCount: () => authors.length,
-    allBooks: () => books,
+    allBooks: (root, args) => {
+      let bookList = books
+      if (args.author)
+        bookList = bookList.filter(book => book.author === args.author)
+      if (args.genre)
+        bookList = bookList.filter(book => book.genres.includes(args.genre))
+      return bookList
+    },
+    allAuthors: () => authors,
   },
+  Author: {
+    bookCount: ({ name }) => books.filter(book => book.author === name).length
+  },
+  Mutation: {
+    addBook: (root, args) => {
+      if (books.find(book => book.title === args.title)) {
+        throw new GraphQLError('Title must be unique', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.title
+          }
+        })
+      }
+      const book = { ...args, id: uuid() }
+      books = books.concat(book)
+      const authorList = authors.map(author => author.name)
+      if (!authorList.includes(args.author)) {
+        authors = authors.concat({ name: args.author, id: uuid() })
+      }
+      return book
+    }
+  }
 };
 
 const server = new ApolloServer({
