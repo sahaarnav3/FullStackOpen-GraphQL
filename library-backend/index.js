@@ -79,7 +79,7 @@ let books = [
     genres: ["classic", "crime"],
   },
   {
-    title: "Demons",
+    title: "The Demons",
     published: 1872,
     author: "Fyodor Dostoevsky",
     id: "afa5de04-344d-11e9-a414-719c6709cf3e",
@@ -100,6 +100,7 @@ const typeDefs = /* GraphQL */ `
     name: String!
     born: Int
     bookCount: Int!
+    id: ID!
   }
 
   type Query {
