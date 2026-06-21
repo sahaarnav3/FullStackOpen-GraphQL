@@ -62,7 +62,23 @@ const resolvers = {
           },
         });
       }
-      const newBook = new Book({ ...args });
+      let author = await Author.findOne({ name: args.author });
+      if (!author) {
+        const newAuthor = new Author({ name: args.author });
+        const authorResponse = await newAuthor.save();
+        if (!authorResponse)
+          throw new GraphQLError(
+            `Author not found in DB. And creating new Author failed. Try Again`,
+            {
+              extensions: {
+                code: "AUTHOR_CREATION_ERROR",
+                error,
+              },
+            },
+          );
+        author = authorResponse;
+      }
+      const newBook = new Book({ ...args, author: author._id });
       try {
         await newBook.save();
       } catch (error) {
@@ -168,6 +184,17 @@ const resolvers = {
         id: user._id,
       };
       return { value: jwt.sign(userForToken, process.env.JWT_SECRET) };
+    },
+    _resetDatabase: async (root, args, context) => {
+      if (process.env.NODE_ENV !== "test")
+        throw new GraphQLError(
+          "_resetDatabase is only available in test mode.",
+        );
+
+      await Author.deleteMany([]);
+      await Book.deleteMany([]);
+      await User.deleteMany([]);
+      return true;
     },
   },
 };
