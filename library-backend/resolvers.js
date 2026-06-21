@@ -1,7 +1,10 @@
-const { GraphQLError } = require("graphql");
+const { GraphQLError, GraphQLBoolean } = require("graphql");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 const Author = require("./models/author");
 const Book = require("./models/book");
+const User = require("./models/user");
 
 const resolvers = {
   Query: {
@@ -27,15 +30,10 @@ const resolvers = {
       if (args.genre) return Book.find({ genres: args.genre }).exec();
       return Book.find({}).populate("author").exec();
     },
-    // allBooks: async (root, args) => {
-    //   let bookList = await Book.find({}).populate('author')
-    //   if(args.author)
-    //     bookList = bookList.filter(book => book.author.name === args.author)
-    //   if(args.genre)
-    //     bookList = bookList.filter(book => book.genres.includes(args.genre))
-    //   return bookList
-    // },
     allAuthors: () => Author.find({}).exec(),
+    me: async (root, args, context) => {
+      return context.currentUser;
+    },
   },
   Author: {
     bookCount: (root) => Book.countDocuments({ author: root._id }).exec(),
@@ -47,7 +45,14 @@ const resolvers = {
     },
   },
   Mutation: {
-    addBook: async (root, args) => {
+    addBook: async (root, args, context) => {
+      if (!context.currentUser)
+        throw new GraphQLError("Not Authenticated", {
+          extensions: {
+            code: "UNAUTHENTICATED",
+          },
+        });
+
       const bookExist = await Book.find({ title: args.title });
       if (bookExist.length) {
         throw new GraphQLError("Title must be unique", {
@@ -71,7 +76,14 @@ const resolvers = {
       }
       return newBook;
     },
-    addAuthor: async (root, args) => {
+    addAuthor: async (root, args, context) => {
+      if (!context.currentUser)
+        throw new GraphQLError("Not Authenticated", {
+          extensions: {
+            code: "UNAUTHENTICATED",
+          },
+        });
+
       const authorExist = await Author.find({ name: args.name });
       if (authorExist.length) {
         throw new GraphQLError("Author must be unique", {
@@ -103,7 +115,14 @@ const resolvers = {
       }
       return newAuthor;
     },
-    editAuthor: async (root, args) => {
+    editAuthor: async (root, args, context) => {
+      if (!context.currentUser)
+        throw new GraphQLError("Not Authenticated", {
+          extensions: {
+            code: "UNAUTHENTICATED",
+          },
+        });
+
       let author = await Author.findOne({ name: args.name });
       if (!author) return null;
       author.born = args.setBornTo;
@@ -119,6 +138,36 @@ const resolvers = {
         });
       }
       return author;
+    },
+    createUser: async (root, args) => {
+      const user = new User({
+        username: args.username,
+        favoriteGenre: args.favoriteGenre,
+      });
+      return user.save().catch((error) => {
+        throw new GraphQLError(`Creating the user failed: ${error.message}`, {
+          extensions: {
+            code: "BAD_USER_INPUT",
+            invalidArgs: args.username,
+            error,
+          },
+        });
+      });
+    },
+    login: async (root, args) => {
+      const user = await User.findOne({ username: args.username });
+      if (!user || args.password !== "secret") {
+        throw new GraphQLError("Wrong Credentials", {
+          extensions: {
+            code: "BAD_USER_INPUT",
+          },
+        });
+      }
+      const userForToken = {
+        username: user.username,
+        id: user._id,
+      };
+      return { value: jwt.sign(userForToken, process.env.JWT_SECRET) };
     },
   },
 };
