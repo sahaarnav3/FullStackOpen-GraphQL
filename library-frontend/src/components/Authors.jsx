@@ -8,6 +8,13 @@ const Authors = ({ token }) => {
 
   const [editAuthor] = useMutation(EDIT_AUTHOR, {
     refetchQueries: [{ query: ALL_AUTHORS }],
+    // update: (cache, response) => {
+    //   cache.updateQuery({ query: ALL_AUTHORS }, ({ allAuthors}) => {
+    //     return {
+    //       allAuthors: allAuthors.concat(response.data.editAuthor)
+    //     }
+    //   });
+    // },
   });
 
   const result = useQuery(ALL_AUTHORS);
@@ -44,27 +51,30 @@ const Authors = ({ token }) => {
           ))}
         </tbody>
       </table>
-      {token && <div>
-        <h2>Set birthyear</h2>
-        <form onSubmit={updateAuthorHandler}>
-          <label>name</label>
-          <select value={name} onChange={(e) => setName(e.target.value)}>
-            <option>Please Select An Author</option>
-            {authors.map((a) => (
-              <option key={a.id}>{a.name}</option>
-            ))}
-          </select>
-          <br />
-          <label>born</label>
-          <input
-            type="number"
-            value={birthYear}
-            onChange={(e) => setBirthYear(Number(e.target.value))}
-          />
-          <br />
-          <button type="submit">update author</button>
-        </form>
-      </div>}
+      {token && (
+        <div>
+          <h2>Set birthyear</h2>
+          <form onSubmit={updateAuthorHandler}>
+            <label>name</label>
+            <select value={name} name="name" onChange={(e) => setName(e.target.value)} aria-label="name">
+              <option>Please Select An Author</option>
+              {authors.map((a) => (
+                <option key={a.id}>{a.name}</option>
+              ))}
+            </select>
+            <br />
+            <label>born</label>
+            <input
+              type="number"
+              value={birthYear}
+              onChange={(e) => setBirthYear(Number(e.target.value))}
+              aria-label="born"
+            />
+            <br />
+            <button type="submit">update author</button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

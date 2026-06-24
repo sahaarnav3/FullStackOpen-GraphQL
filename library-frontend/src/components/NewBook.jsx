@@ -11,6 +11,18 @@ const NewBook = () => {
 
   const [addBook] = useMutation(ADD_BOOK, {
     refetchQueries: [{ query: ALL_BOOKS }, { query: ALL_AUTHORS }],
+    // update: (cache, response) => {
+    //   cache.updateQuery({ ALL_AUTHORS }, ({ allAuthors }) => {
+    //     return {
+    //       allAuthors: allAuthors.concat(response.data.addAuthor),
+    //     };
+    //   });
+    //   cache.updateQuery({ ALL_BOOKS }, ({ allBooks }) => {
+    //     return {
+    //       allBooks: allBooks.concat(response.data.allBooks),
+    //     };
+    //   });
+    // },
   });
 
   const submit = async (event) => {
@@ -35,15 +47,19 @@ const NewBook = () => {
         <div>
           title
           <input
+            type="text"
             value={title}
             onChange={({ target }) => setTitle(target.value)}
+            aria-label="title"
           />
         </div>
         <div>
           author
           <input
+            type="text"
             value={author}
             onChange={({ target }) => setAuthor(target.value)}
+            aria-label="author"
           />
         </div>
         <div>
@@ -52,12 +68,15 @@ const NewBook = () => {
             type="number"
             value={published}
             onChange={({ target }) => setPublished(Number(target.value))}
+            aria-label="published"
           />
         </div>
         <div>
           <input
+            type="text"
             value={genre}
             onChange={({ target }) => setGenre(target.value)}
+            aria-label="genre"
           />
           <button onClick={addGenre} type="button">
             add genre
