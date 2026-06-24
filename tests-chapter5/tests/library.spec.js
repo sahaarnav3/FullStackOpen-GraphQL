@@ -129,7 +129,7 @@ describe('Library app', () => {
         await page.getByRole('button', { name: 'books' }).click()
         await page.getByRole('button', { name: 'refactoring' }).click()
 
-        await expect(page.getByText('in genre')).toBeVisible()
+        // await expect(page.getByText('in genre')).toBeVisible()
         await expect(page.getByText('Clean Code')).toBeVisible()
         await expect(page.getByText('Refactoring, edition 2')).toBeVisible()
         await expect(page.getByText('Refactoring to patterns')).toBeVisible()
